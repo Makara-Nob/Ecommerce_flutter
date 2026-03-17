@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/address_provider.dart';
+import '../../models/address/address_model.dart';
 import '../../theme/app_colors.dart';
+import '../profile/address_list_screen.dart';
 import 'order_success_screen.dart';
 import 'aba_checkout_screen.dart';
 
@@ -16,21 +19,47 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _addressController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _noteController = TextEditingController();
+  
+  AddressModel? _selectedAddress;
   bool _isLoading = false;
+  bool _isInit = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInit) {
+      final addressProvider = Provider.of<AddressProvider>(context, listen: false);
+      if (addressProvider.addresses.isEmpty && !addressProvider.isLoading) {
+        addressProvider.loadAddresses().then((_) {
+          if (mounted) {
+            setState(() {
+              _selectedAddress = addressProvider.defaultAddress;
+            });
+          }
+        });
+      } else {
+        _selectedAddress = addressProvider.defaultAddress;
+      }
+      _isInit = false;
+    }
+  }
 
   @override
   void dispose() {
-    _addressController.dispose();
-    _phoneController.dispose();
     _noteController.dispose();
     super.dispose();
   }
 
   Future<void> _submitOrder() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedAddress == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a delivery address'), backgroundColor: AppColors.errorLight),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -53,12 +82,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'quantity': item.quantity,
       }).toList();
 
+      final fullAddressString = '${_selectedAddress!.streetAddress}, ${_selectedAddress!.city}' + 
+          (_selectedAddress!.state != null ? ', ${_selectedAddress!.state}' : '') +
+          (_selectedAddress!.zipCode != null ? ' ${_selectedAddress!.zipCode}' : '');
+
       final success = await orderProvider.createOrder(
-        deliveryAddress: _addressController.text,
-        deliveryPhone: _phoneController.text,
+        deliveryAddress: fullAddressString,
+        deliveryPhone: _selectedAddress!.phoneNumber,
         notes: _noteController.text,
         items: items,
-        paymentMethod: 'ABA_PAYWAY', // Or let user select this if you implement radio buttons
+        paymentMethod: 'ABA_PAYWAY', // Defaulting to Aba
       );
 
       if (!mounted) return;
@@ -72,6 +105,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (_) => AbaCheckoutScreen(
+                orderId: order.id,
                 paywayPayload: order.paywayPayload!,
                 paywayApiUrl: order.paywayApiUrl!,
               ),
@@ -136,36 +170,109 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ).animate().fadeIn(delay: 100.ms).slideX(),
               const SizedBox(height: 32),
 
-              // Address Field
+              // Delivery Address Selector
               _buildSectionTitle(context, 'Delivery Address', Icons.location_on_outlined),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _addressController,
-                decoration: const InputDecoration(
-                  labelText: 'Address',
-                  hintText: 'Unit, Street, City, ZIP',
-                  prefixIcon: Icon(Icons.home_outlined),
+              
+              InkWell(
+                onTap: () async {
+                  final result = await Navigator.push<AddressModel>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AddressListScreen(isSelectionMode: true),
+                    ),
+                  );
+                  if (result != null) {
+                    setState(() => _selectedAddress = result);
+                  }
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: _selectedAddress == null ? AppColors.errorLight : Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryStart.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.location_on, color: AppColors.primaryStart),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _selectedAddress == null 
+                          ? const Text(
+                              'Select a delivery address',
+                              style: TextStyle(color: Colors.grey, fontSize: 16),
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      _selectedAddress!.title,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    ),
+                                    if (_selectedAddress!.isDefault) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryStart.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: const Text(
+                                          'Default',
+                                          style: TextStyle(color: AppColors.primaryStart, fontSize: 10, fontWeight: FontWeight.bold),
+                                        ),
+                                      )
+                                    ]
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${_selectedAddress!.recipientName} • ${_selectedAddress!.phoneNumber}',
+                                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${_selectedAddress!.streetAddress}, ${_selectedAddress!.city}',
+                                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.chevron_right, color: Colors.grey),
+                    ],
+                  ),
                 ),
-                maxLines: 3,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter your address' : null,
               ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
-              const SizedBox(height: 24),
-
-              // Phone Field
-              _buildSectionTitle(context, 'Contact Number', Icons.phone_outlined),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phoneController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  hintText: '+1 234 567 8900',
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                keyboardType: TextInputType.phone,
-                validator: (value) =>
-                    value?.isEmpty ?? true ? 'Please enter your phone number' : null,
-              ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.1),
+              
+              if (_selectedAddress == null) ...[
+                const SizedBox(height: 8),
+                const Padding(
+                  padding: EdgeInsets.only(left: 12),
+                  child: Text('Address is required', style: TextStyle(color: AppColors.errorLight, fontSize: 12)),
+                )
+              ],
               const SizedBox(height: 24),
 
               // Note Field

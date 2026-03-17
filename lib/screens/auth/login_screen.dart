@@ -48,30 +48,16 @@ class _LoginScreenState extends State<LoginScreen> {
           // Load cart after successful login
           Provider.of<CartProvider>(context, listen: false).loadCart();
           
+          ToastHelper.success(context, 'Login successful!');
+          
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const HomeScreen()),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(authProvider.errorMessage ?? 'Login failed'),
-              backgroundColor: AppColors.errorLight,
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.all(16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          );
+          ToastHelper.error(context, authProvider.errorMessage ?? 'Login failed');
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('An unexpected error occurred: $e'),
-            backgroundColor: AppColors.errorLight,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
+        ToastHelper.error(context, 'An unexpected error occurred: $e');
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -81,23 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundLight,
       body: Stack(
         children: [
-          // Background Gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF6366F1), // Indigo
-                  Color(0xFF8B5CF6), // Purple
-                  Color(0xFFEC4899), // Pink
-                ],
-              ),
-            ),
-          ),
-          
           // Back Button
           Positioned(
             top: 0,
@@ -106,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                  icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textPrimaryLight),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ),
@@ -147,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Welcome Back',
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
+                        color: AppColors.textPrimaryLight,
                         fontWeight: FontWeight.bold,
                       ),
                     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
@@ -155,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Sign in to continue shopping',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.8),
+                        color: AppColors.textSecondaryLight,
                       ),
                     ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2, end: 0),
                     
@@ -257,9 +229,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     
                     const SizedBox(height: 24),
                     Text(
-                      'Default credentials:\nUsername: admin@gmail.com , Password: 88889999', // Updated to match previous file but kept concise
+                      'Default credentials:\nUsername: admin@gmail.com , Password: 88889999', 
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+                      style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
                     ),
                   ],
                 ),

@@ -132,34 +132,52 @@ class _ToastWidgetState extends State<_ToastWidget>
           position: _slideAnimation,
           child: Material(
             color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: _getBackgroundColor(),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(_getIcon(), color: Colors.white, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      widget.message,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ColorFilter.mode(Colors.black.withOpacity(0.01), BlendMode.srcOver),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: _getBackgroundColor().withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _getBackgroundColor().withOpacity(0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(_getIcon(), color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          widget.message,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            letterSpacing: 0.2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

@@ -14,6 +14,8 @@ import '../../services/product_service.dart';
 import '../../models/api_response.dart';
 import '../../models/home/brand_model.dart';
 import 'brand_detail_screen.dart';
+import '../../providers/home_provider.dart';
+import '../../models/home/promotion_model.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
@@ -103,6 +105,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final homeProvider = Provider.of<HomeProvider>(context);
+    final activePromotion = homeProvider.promotions.cast<PromotionModel?>().firstWhere(
+      (p) => p?.productId == widget.product.id.toString(),
+      orElse: () => null,
+    );
     
     return Scaffold(
       body: CustomScrollView(
@@ -281,89 +288,110 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     
-                    // SKU & Stock
-                    Row(
-                      children: [
-                        Text(
-                          'SKU: ${_selectedVariant?.sku ?? widget.product.sku}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: (_selectedVariant?.stockQuantity ?? widget.product.quantity) > 0 
-                                ? AppColors.successLightBg 
-                                : AppColors.errorLightBg,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: (_selectedVariant?.stockQuantity ?? widget.product.quantity) > 0 
-                                  ? AppColors.successLight 
-                                  : AppColors.errorLight,
-                              width: 0.5,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                (_selectedVariant?.stockQuantity ?? widget.product.quantity) > 0 
-                                    ? Icons.check_circle 
-                                    : Icons.cancel,
-                                size: 14,
-                                color: (_selectedVariant?.stockQuantity ?? widget.product.quantity) > 0 
-                                    ? AppColors.successLight 
-                                    : AppColors.errorLight,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                (_selectedVariant?.stockQuantity ?? widget.product.quantity) > 0 
-                                    ? 'In Stock (${_selectedVariant?.stockQuantity ?? widget.product.quantity})' 
-                                    : 'Out of Stock',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: (_selectedVariant?.stockQuantity ?? widget.product.quantity) > 0 
-                                      ? AppColors.successLight 
-                                      : AppColors.errorLight,
+                    // Price and Promotion
+                    Builder(
+                      builder: (context) {
+                        double baseAmount = widget.product.sellingPrice;
+                        if (_selectedVariant != null && _selectedVariant!.additionalPrice > 0) {
+                          baseAmount += _selectedVariant!.additionalPrice;
+                        }
+
+                        double finalAmount = baseAmount;
+                        if (activePromotion != null) {
+                          if (activePromotion.discountType == 'PERCENTAGE') {
+                            finalAmount = baseAmount * (1 - (activePromotion.discountValue / 100));
+                          } else {
+                            finalAmount = (baseAmount - activePromotion.discountValue).clamp(0.0, double.infinity);
+                          }
+                        }
+
+                        final formatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (activePromotion != null) ...[
+                              // Promotion Badge & Dates
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFFF6B6B), Color(0xFFEE5A6F)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFF6B6B).withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.local_offer, color: Colors.white, size: 16),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          activePromotion.discountType == 'PERCENTAGE'
+                                              ? '${activePromotion.discountValue.toInt()}% OFF'
+                                              : '${formatter.format(activePromotion.discountValue)} OFF',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Valid: ${DateFormat('MMM d').format(activePromotion.startDate)} - ${DateFormat('MMM d, yyyy').format(activePromotion.endDate)}',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              const SizedBox(height: 16),
                             ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    // Price
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          _formatCurrency(widget.product.sellingPrice),
-                          style: theme.textTheme.displaySmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (widget.product.sellingPrice < widget.product.costPrice) ...[
-                          const SizedBox(width: 12),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Text(
-                              _formatCurrency(widget.product.costPrice),
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                decoration: TextDecoration.lineThrough,
-                                color: Colors.grey[500],
-                              ),
+
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  formatter.format(finalAmount),
+                                  style: theme.textTheme.displaySmall?.copyWith(
+                                    color: activePromotion != null ? const Color(0xFFEE5A6F) : theme.colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                if (activePromotion != null || widget.product.sellingPrice < widget.product.costPrice) ...[
+                                  const SizedBox(width: 12),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: Text(
+                                      formatter.format(baseAmount),
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        decoration: TextDecoration.lineThrough,
+                                        color: Colors.grey[500],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
-                          ),
-                        ],
-                      ],
+                          ],
+                        );
+                      },
                     ),
 
                     if (widget.product.variants.isNotEmpty) ...[

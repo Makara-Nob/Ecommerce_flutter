@@ -17,6 +17,7 @@ import 'popular_products_screen.dart';
 import 'new_arrivals_screen.dart';
 import 'promotion_list_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'all_categories_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -247,7 +248,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                           children: [
                             _SectionHeader(
                               title: 'Categories',
-                              onShowMore: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllProductsScreen())),
+                              onShowMore: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllCategoriesScreen())),
                             ),
                             SizedBox(
                               height: 100,
@@ -286,56 +287,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
                       },
                     ),
 
-                    // ── 3. Brands ──────────────────────────────────────────
-                    Consumer<HomeProvider>(
-                      builder: (context, homeProvider, _) {
-                        if (homeProvider.isLoading && homeProvider.brands.isEmpty) {
-                          return const SizedBox.shrink();
-                        }
-                        if (homeProvider.brands.isEmpty) return const SizedBox.shrink();
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _SectionHeader(
-                              title: 'Top Brands',
-                              onShowMore: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AllProductsScreen())),
-                            ),
-                            SizedBox(
-                              height: 100,
-                              child: ListView.separated(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                scrollDirection: Axis.horizontal,
-                                itemCount: homeProvider.brands.length,
-                                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                                itemBuilder: (context, index) {
-                                  final brand = homeProvider.brands[index];
-                                  return _IconicItem(
-                                    title: brand.name,
-                                    imageUrl: brand.logo,
-                                    fallbackIcon: Icons.verified_rounded,
-                                    onTap: () {
-                                      final provider = Provider.of<ProductProvider>(context, listen: false);
-                                      provider.filterByBrand(brand.id);
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => AllProductsScreen(
-                                            initialBrandId: brand.id,
-                                            title: brand.name,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    index: index,
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                        );
-                      },
-                    ),
 
                     // ── 4. Promotions ──────────────────────────────────────
                     Consumer<HomeProvider>(
@@ -551,13 +502,10 @@ class _IconicItem extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: imageUrl != null && imageUrl!.isNotEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Image.network(
-                        imageUrl!,
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Icon(fallbackIcon, color: AppColors.primaryStart, size: 26),
-                      ),
+                  ? Image.network(
+                      imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Icon(fallbackIcon, color: AppColors.primaryStart, size: 26),
                     )
                   : Icon(fallbackIcon, color: AppColors.primaryStart, size: 26),
             ),

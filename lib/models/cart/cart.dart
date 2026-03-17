@@ -35,4 +35,18 @@ class Cart {
   }
   
   int get itemCount => items.fold(0, (sum, item) => sum + item.quantity);
+
+  Cart copyWith({
+    int? id,
+    int? userId,
+    List<CartItem>? items,
+    double? totalAmount,
+  }) {
+    return Cart(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      items: items ?? this.items,
+      totalAmount: totalAmount ?? this.totalAmount,
+    );
+  }
 }

@@ -60,6 +60,28 @@ class CartItem {
       'subtotal': subtotal,
     };
   }
+
+  CartItem copyWith({
+    int? id,
+    Product? product,
+    int? quantity,
+    double? price,
+    double? subtotal,
+    int? variantId,
+    String? variantName,
+    String? variantAttributes,
+  }) {
+    return CartItem(
+      id: id ?? this.id,
+      product: product ?? this.product,
+      quantity: quantity ?? this.quantity,
+      price: price ?? this.price,
+      subtotal: subtotal ?? this.subtotal,
+      variantId: variantId ?? this.variantId,
+      variantName: variantName ?? this.variantName,
+      variantAttributes: variantAttributes ?? this.variantAttributes,
+    );
+  }
 }
 
 class CartItemRequest {

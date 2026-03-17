@@ -3,7 +3,11 @@ class ApiConstants {
   // For Android Emulator use: http://10.0.2.2:8888
   // For physical device use: http://YOUR_IP:8888 (e.g., http://192.168.1.100:8888)
   static const String baseUrl = 'https://ecommerce-backend-v8k1.onrender.com';
-  
+
+  //api request time config
+  static const Duration requestTimeout = Duration(seconds: 30);
+  static const Duration uploadTimeout = Duration(seconds: 90);
+
   // API Endpoints
   
   // Auth endpoints

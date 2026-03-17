@@ -41,7 +41,7 @@ class ApiService {
 
       print('📤 ApiService: GET request to $endpoint');
       final response = await http.get(url, headers: headers).timeout(
-        const Duration(seconds: 10),
+        ApiConstants.requestTimeout,
         onTimeout: () {
           throw const SocketException('Connection timed out');
         },
@@ -76,7 +76,7 @@ class ApiService {
 
       print('📤 ApiService: GET (List) request to $endpoint');
       final response = await http.get(url, headers: headers).timeout(
-        const Duration(seconds: 10),
+        ApiConstants.requestTimeout,
         onTimeout: () {
           throw const SocketException('Connection timed out');
         },
@@ -117,7 +117,7 @@ class ApiService {
         headers: headers,
         body: jsonEncode(body),
       ).timeout(
-        const Duration(seconds: 10),
+        ApiConstants.requestTimeout,
         onTimeout: () {
           throw const SocketException('Connection timed out');
         },
@@ -163,6 +163,11 @@ class ApiService {
         url,
         headers: headers,
         body: body != null ? jsonEncode(body) : null,
+      ).timeout(
+        ApiConstants.requestTimeout,
+        onTimeout: () {
+          throw const SocketException('Connection timed out');
+        },
       );
 
       return _handleResponse<T>(response, fromJson, endpoint);
@@ -192,7 +197,12 @@ class ApiService {
       final headers = await _getHeaders(includeAuth: requiresAuth);
       print('📤 ApiService: DELETE request to $endpoint');
 
-      final response = await http.delete(url, headers: headers);
+      final response = await http.delete(url, headers: headers).timeout(
+        ApiConstants.requestTimeout,
+        onTimeout: () {
+          throw const SocketException('Connection timed out');
+        },
+      );
       return _handleResponse<T>(response, fromJson, endpoint);
     } on SocketException {
       return ApiResponse<T>(
@@ -234,7 +244,12 @@ class ApiService {
       
       request.files.add(multipartFile);
       
-      final streamedResponse = await request.send();
+      final streamedResponse = await request.send().timeout(
+        ApiConstants.uploadTimeout,
+        onTimeout: () {
+          throw const SocketException('Connection timed out');
+        },
+      );
       final response = await http.Response.fromStream(streamedResponse);
       
       return _handleResponse<String>(response, null, endpoint);

@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/order_provider.dart';
 import '../../theme/app_colors.dart';
 import '../auth/login_screen.dart';
 import '../home/home_screen.dart';
 import 'edit_profile_screen.dart';
+import 'address_list_screen.dart';
+import '../orders/order_list_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -207,28 +210,32 @@ class ProfileScreen extends StatelessWidget {
                   _buildMenuItem(context, Icons.person_outline, 'Personal Information', 
                     subtitle: 'Manage your personal details',
                     onTap: () => _navigateToEditProfile(context)),
-                  const Divider(height: 1, indent: 56),
-                  _buildMenuItem(context, Icons.phone_outlined, 'Phone Number', 
-                    trailing: Text(user?.phone ?? 'Add', style: TextStyle(color: theme.colorScheme.primary))),
-                  const Divider(height: 1, indent: 56),
-                  _buildMenuItem(context, Icons.location_on_outlined, 'Address Book', 
-                    subtitle: 'Manage shipping addresses'),
-                ]),
-
-                const SizedBox(height: 24),
-                const Padding(
-                  padding: EdgeInsets.only(left: 8, bottom: 12),
-                  child: Text(
-                    'Settings',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey),
-                  ),
-                ),
-                _buildMenuCard(context, [
-                  _buildMenuItem(context, Icons.notifications_outlined, 'Notifications'),
-                  const Divider(height: 1, indent: 56),
-                  _buildMenuItem(context, Icons.language, 'Language'),
-                  const Divider(height: 1, indent: 56),
-                  _buildMenuItem(context, Icons.help_outline, 'Help & Support'),
+                    
+                  const Divider(height: 1, indent: 64),
+                  
+                  _buildMenuItem(context, Icons.history_rounded, 'Order History',
+                    subtitle: 'View and track your orders',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const OrderListScreen(),
+                        ),
+                      );
+                    }),
+                    
+                  const Divider(height: 1, indent: 64),
+                  
+                  _buildMenuItem(context, Icons.location_on_outlined, 'My Addresses',
+                    subtitle: 'Manage your delivery locations',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddressListScreen(),
+                        ),
+                      );
+                    }),
                 ]),
 
                 const SizedBox(height: 32),

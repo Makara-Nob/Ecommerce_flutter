@@ -23,14 +23,26 @@ class CartScreen extends StatelessWidget {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Shopping Cart'),
+        title: const Text(
+          'Shopping Cart',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+          ),
+        ),
         actions: [
           Consumer<CartProvider>(
             builder: (context, cartProvider, child) {
               if (cartProvider.cart != null &&
                   cartProvider.cart!.items.isNotEmpty) {
                 return IconButton(
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(Icons.delete_outline, color: Colors.white),
                   tooltip: 'Clear Cart',
                   onPressed: () async {
                     final confirm = await showDialog<bool>(
@@ -155,18 +167,39 @@ class CartScreen extends StatelessWidget {
                               padding: const EdgeInsets.all(12),
                               child: Row(
                                 children: [
-                              // Product Image
-                              Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient, // Placeholder gradient
-                                  borderRadius: BorderRadius.circular(12),
+                                // Product Image
+                                Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: (item.product.images.isNotEmpty || item.product.imageUrl != null)
+                                      ? Image.network(
+                                          item.product.images.isNotEmpty
+                                              ? item.product.images.first
+                                              : item.product.imageUrl!,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => Container(
+                                            decoration: BoxDecoration(
+                                              gradient: AppColors.primaryGradient,
+                                            ),
+                                            child: const Center(
+                                              child: Icon(Icons.shopping_bag, color: Colors.white70),
+                                            ),
+                                          ),
+                                        )
+                                      : Container(
+                                          decoration: BoxDecoration(
+                                            gradient: AppColors.primaryGradient,
+                                          ),
+                                          child: const Center(
+                                            child: Icon(Icons.shopping_bag, color: Colors.white70),
+                                          ),
+                                        ),
                                 ),
-                                child: const Center(
-                                  child: Icon(Icons.shopping_bag, color: Colors.white70),
-                                ),
-                              ),
                               const SizedBox(width: 16),
                               // Details
                               Expanded(

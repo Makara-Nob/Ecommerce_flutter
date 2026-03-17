@@ -146,7 +146,7 @@ class OrderDetailScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            // Product Image Placeholder
+                            // Product Image
                             Container(
                               width: 60,
                               height: 60,
@@ -154,10 +154,20 @@ class OrderDetailScreen extends StatelessWidget {
                                 color: Colors.grey[100],
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(
-                                Icons.shopping_bag_outlined,
-                                color: Colors.grey,
-                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: (item.product.images.isNotEmpty || item.product.imageUrl != null)
+                                  ? Image.network(
+                                      item.product.images.isNotEmpty
+                                          ? item.product.images.first
+                                          : item.product.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => const Center(
+                                        child: Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+                                      ),
+                                    )
+                                  : const Center(
+                                      child: Icon(Icons.shopping_bag_outlined, color: Colors.grey),
+                                    ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(

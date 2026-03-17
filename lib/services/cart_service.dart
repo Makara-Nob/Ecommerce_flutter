@@ -36,7 +36,7 @@ class CartService {
   Future<ApiResponse<Cart>> updateItemQuantity(int itemId, int quantity) async {
     return await _apiService.put<Cart>(
       ApiConstants.cartItem(itemId),
-      queryParams: {'quantity': quantity.toString()},
+      body: {'quantity': quantity},
       requiresAuth: true,
       fromJson: (json) => Cart.fromJson(json),
     );

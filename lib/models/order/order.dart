@@ -36,7 +36,7 @@ class Order {
     final orderJson = json.containsKey('order') ? json['order'] as Map<String, dynamic> : json;
     
     return Order(
-      id: orderJson['id'] ?? 0,
+      id: orderJson['id'] ?? orderJson['_id'] ?? 0,
       userId: orderJson['userId'] ?? 0,
       items: (orderJson['items'] as List?)
               ?.map((item) => OrderItem.fromJson(item))

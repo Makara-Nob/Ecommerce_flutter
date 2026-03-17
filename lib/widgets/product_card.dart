@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../models/product/product.dart';
 import '../theme/app_colors.dart';
+import '../providers/home_provider.dart';
+import '../models/home/promotion_model.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -37,6 +40,11 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final homeProvider = Provider.of<HomeProvider>(context);
+    final activePromotion = homeProvider.promotions.cast<PromotionModel?>().firstWhere(
+      (p) => p?.productId == product.id.toString(),
+      orElse: () => null,
+    );
 
     return Card(
           clipBehavior: Clip.antiAlias,
@@ -112,7 +120,7 @@ class ProductCard extends StatelessWidget {
                         ),
 
                       // Discount badge (top-right)
-                      if (discountBadge != null)
+                      if (discountBadge != null || activePromotion != null)
                         Positioned(
                           top: 8,
                           right: 8,
@@ -122,11 +130,18 @@ class ProductCard extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.errorLight,
+                              gradient: activePromotion != null ? const LinearGradient(
+                                colors: [Color(0xFFFF6B6B), Color(0xFFEE5A6F)],
+                              ) : null,
+                              color: activePromotion == null ? AppColors.errorLight : null,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              discountBadge!,
+                              activePromotion != null
+                                  ? (activePromotion.discountType == 'PERCENTAGE'
+                                      ? '${activePromotion.discountValue.toInt()}% OFF'
+                                      : '${_formatCurrency(activePromotion.discountValue)} OFF')
+                                  : discountBadge!,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
@@ -181,23 +196,44 @@ class ProductCard extends StatelessWidget {
                               ),
                             ),
                           // Price
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              _formatCurrency(product.sellingPrice),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                                color: Colors.white,
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (activePromotion != null || product.sellingPrice < product.costPrice)
+                                Text(
+                                  _formatCurrency(product.sellingPrice < product.costPrice ? product.costPrice : product.sellingPrice),
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    decoration: TextDecoration.lineThrough,
+                                    color: Colors.grey[500],
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              const SizedBox(height: 2),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  gradient: activePromotion != null ? const LinearGradient(
+                                    colors: [Color(0xFFFF6B6B), Color(0xFFEE5A6F)],
+                                  ) : AppColors.primaryGradient,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  activePromotion != null 
+                                    ? _formatCurrency(activePromotion.discountType == 'PERCENTAGE' 
+                                        ? product.sellingPrice * (1 - (activePromotion.discountValue / 100))
+                                        : (product.sellingPrice - activePromotion.discountValue).clamp(0.0, double.infinity))
+                                    : _formatCurrency(product.sellingPrice),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ],
                       ),
