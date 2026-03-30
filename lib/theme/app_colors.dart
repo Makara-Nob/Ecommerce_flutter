@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// App color palette with vibrant, modern colors
 class AppColors {
-  // Primary gradient colors (Charcoal Silver - Makara Brand)
+  // Primary gradient colors (Charcoal Silver - NAGA Brand)
   static const primaryStart = Color(0xFF2C2C2C); // Deep charcoal (like the logo M box)
   static const primaryEnd = Color(0xFF5A5A5A);   // Warm silver
 
@@ -52,29 +52,34 @@ class AppColors {
   static const infoDark = Color(0xFF60A5FA);
   static const infoDarkBg = Color(0xFF1E3A8A);
 
-  // Gradient definitions
+  // Glassmorphism tokens
+  static const glassBorder = Color(0x33FFFFFF); // 20% White
+  static const glassHighlight = Color(0x66FFFFFF); // 40% White
+  static const glassBackground = Color(0x1AFFFFFF); // 10% White
+
+  // Refined Gradient definitions
   static const primaryGradient = LinearGradient(
-    colors: [primaryStart, primaryEnd],
+    colors: [Color(0xFF232526), Color(0xFF414345)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  // Gold accent from the Makara logo bag
+  // Gold NAGA accent from the logo bag
   static const gold = Color(0xFFC6A664);
 
   static const accentGradient = LinearGradient(
-    colors: [accentPink, accentOrange],
+    colors: [Color(0xFFFF5F6D), Color(0xFFFFC371)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const successGradient = LinearGradient(
-    colors: [Color(0xFF10B981), Color(0xFF059669)],
+    colors: [Color(0xFF11998E), Color(0xFF38EF7D)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   // Glassmorphism overlay
   static Color glassOverlay(bool isDark) =>
-      isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.7);
+      isDark ? Colors.white.withOpacity(0.08) : Colors.white.withOpacity(0.4);
 }

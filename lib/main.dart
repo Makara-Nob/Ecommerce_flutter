@@ -8,13 +8,24 @@ import 'providers/order_provider.dart';
 import 'providers/home_provider.dart';
 import 'providers/address_provider.dart';
 import 'providers/wishlist_provider.dart';
+import 'providers/notification_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'theme/app_theme.dart';
 import 'widgets/global_draggable_cart.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'services/notification_service.dart';
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  await NotificationService().init();
+
   runApp(const MyApp());
 }
 
@@ -32,10 +43,11 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => HomeProvider()),
         ChangeNotifierProvider(create: (_) => AddressProvider()),
         ChangeNotifierProvider(create: (_) => WishlistProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
-        title: 'E-commerce App',
+        title: 'NAGA',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme(),
         darkTheme: AppTheme.darkTheme(),
@@ -43,12 +55,7 @@ class MyApp extends StatelessWidget {
         builder: (context, child) {
           return Directionality(
             textDirection: TextDirection.ltr,
-            child: Stack(
-              children: [
-                if (child != null) child,
-                const GlobalDraggableCart(),
-              ],
-            ),
+            child: child ?? const SizedBox.shrink(),
           );
         },
         home: const AppInitializer(),
@@ -71,6 +78,13 @@ class _AppInitializerState extends State<AppInitializer> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initialize();
+      // ➕ NEW — Wire foreground push → badge refresh
+      NotificationService().onNotificationReceived = () {
+        if (mounted) {
+          Provider.of<NotificationProvider>(context, listen: false)
+              .fetchNotifications(refresh: true);
+        }
+      };
     });
   }
 
@@ -86,9 +100,11 @@ class _AppInitializerState extends State<AppInitializer> {
     // If logged in, load cart and wishlist
     if (authProvider.isAuthenticated) {
       final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
       await Future.wait([
         cartProvider.loadCart(),
         wishlistProvider.loadWishlist(),
+        notificationProvider.fetchNotifications(),
       ]);
     }
   }

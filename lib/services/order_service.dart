@@ -13,6 +13,7 @@ class OrderService {
     String? notes,
     required List<Map<String, dynamic>> items,
     String paymentMethod = 'ABA_PAYWAY',
+    bool? isBuyNow,
   }) async {
     final request = OrderRequest(
       shippingAddress: deliveryAddress,
@@ -20,6 +21,7 @@ class OrderService {
       notes: notes,
       items: items,
       paymentMethod: paymentMethod,
+      isBuyNow: isBuyNow,
     );
 
     return await _apiService.post<Order>(
@@ -30,19 +32,28 @@ class OrderService {
     );
   }
 
-  // Get my orders
-  Future<ApiResponse<List<Order>>> getMyOrders({
-    int page = 0,
-    int limit = 20,
+  // Get my orders with pagination
+  Future<ApiResponse<OrderListResponse>> getMyOrders({
+    int page = 1,
+    int limit = 10,
     String? status,
     String? sortBy,
     String? sortDirection,
   }) async {
-    // The backend /api/v1/orders/my-orders is a GET request and returns an array of orders directly in `data`.
-    final response = await _apiService.getList<Order>(
+    final Map<String, dynamic> body = {
+      'pageNo': page,
+      'pageSize': limit,
+    };
+
+    if (status != null) body['status'] = status;
+    if (sortBy != null) body['sortBy'] = sortBy;
+    if (sortDirection != null) body['sortDirection'] = sortDirection;
+
+    final response = await _apiService.post<OrderListResponse>(
       ApiConstants.myOrders,
+      body: body,
       requiresAuth: true,
-      fromJson: (json) => Order.fromJson(json),
+      fromJson: (json) => OrderListResponse.fromJson(json),
     );
 
     return response;

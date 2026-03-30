@@ -94,6 +94,7 @@ class OrderRequest {
   final String? notes;
   final String paymentMethod;
   final List<Map<String, dynamic>> items;
+  final bool? isBuyNow;
 
   OrderRequest({
     this.shippingAddress,
@@ -101,6 +102,7 @@ class OrderRequest {
     this.notes,
     this.paymentMethod = 'CASH',
     required this.items,
+    this.isBuyNow,
   });
 
   Map<String, dynamic> toJson() {
@@ -110,35 +112,39 @@ class OrderRequest {
       'notes': notes,
       'paymentMethod': paymentMethod,
       'items': items,
+      if (isBuyNow != null) 'isBuyNow': isBuyNow,
     };
   }
 }
 
 class OrderListResponse {
-  final List<Order> orders;
+  final List<Order> content;
   final int totalElements;
   final int totalPages;
-  final int currentPage;
+  final int pageNo;
   final int pageSize;
+  final bool last;
 
   OrderListResponse({
-    required this.orders,
+    required this.content,
     required this.totalElements,
     required this.totalPages,
-    required this.currentPage,
+    required this.pageNo,
     required this.pageSize,
+    required this.last,
   });
 
   factory OrderListResponse.fromJson(Map<String, dynamic> json) {
     return OrderListResponse(
-      orders: (json['content'] as List?)
+      content: (json['content'] as List?)
               ?.map((item) => Order.fromJson(item))
               .toList() ??
           [],
       totalElements: json['totalElements'] ?? 0,
       totalPages: json['totalPages'] ?? 0,
-      currentPage: json['pageNo'] ?? 0,
-      pageSize: json['pageSize'] ?? 0,
+      pageNo: json['pageNo'] ?? 1,
+      pageSize: json['pageSize'] ?? 10,
+      last: json['last'] ?? true,
     );
   }
 }

@@ -8,12 +8,18 @@ class OrderProvider with ChangeNotifier {
   List<Order> _orders = [];
   Order? _currentOrder;
   bool _isLoading = false;
+  bool _isFetchingMore = false;
   String? _errorMessage;
+  int _currentPage = 1;
+  static const int _pageSize = 10;
+  bool _hasMore = true;
 
   List<Order> get orders => _orders;
   Order? get currentOrder => _currentOrder;
   bool get isLoading => _isLoading;
+  bool get isFetchingMore => _isFetchingMore;
   String? get errorMessage => _errorMessage;
+  bool get hasMore => _hasMore;
 
   // Create order
   Future<bool> createOrder({
@@ -22,6 +28,7 @@ class OrderProvider with ChangeNotifier {
     String? notes,
     required List<Map<String, dynamic>> items,
     String paymentMethod = 'ABA_PAYWAY',
+    bool? isBuyNow,
   }) async {
     _isLoading = true;
     _errorMessage = null;
@@ -34,6 +41,7 @@ class OrderProvider with ChangeNotifier {
         notes: notes,
         items: items,
         paymentMethod: paymentMethod,
+        isBuyNow: isBuyNow,
       );
 
       if (response.success && response.data != null) {
@@ -56,26 +64,76 @@ class OrderProvider with ChangeNotifier {
   }
 
   // Load orders
-  Future<void> loadOrders({bool refresh = false}) async {
-    _isLoading = true;
-    _errorMessage = null;
+  Future<void> loadOrders({bool refresh = false, String? status}) async {
     if (refresh) {
+      _currentPage = 1;
+      _hasMore = true;
       _orders = [];
     }
-    notifyListeners();
+
+    if (_orders.isEmpty) {
+      _isLoading = true;
+      _errorMessage = null;
+      notifyListeners();
+    }
 
     try {
-      final response = await _orderService.getMyOrders();
+      final response = await _orderService.getMyOrders(
+        page: _currentPage,
+        limit: _pageSize,
+        status: status,
+      );
 
       if (response.success && response.data != null) {
-        _orders = response.data!;
+        final data = response.data!;
+        if (refresh) {
+          _orders = data.content;
+        } else {
+          _orders.addAll(data.content);
+        }
+        _hasMore = !data.last;
       } else {
         _errorMessage = response.message;
       }
     } catch (e) {
       _errorMessage = 'Failed to load orders: $e';
     } finally {
-      _isLoading = false;
+      if (_orders.isEmpty || refresh) {
+        _isLoading = false;
+      }
+      notifyListeners();
+    }
+  }
+
+  // Load more orders (pagination)
+  Future<void> loadMoreOrders({String? status}) async {
+    if (_isFetchingMore || !_hasMore) return;
+
+    _isFetchingMore = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      _currentPage++;
+      final response = await _orderService.getMyOrders(
+        page: _currentPage,
+        limit: _pageSize,
+        status: status,
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data!;
+        _orders.addAll(data.content);
+        _hasMore = !data.last;
+      } else {
+        _currentPage--; // Revert page on error
+        _errorMessage = response.message;
+      }
+    } catch (e) {
+      _currentPage--;
+      _errorMessage = 'Failed to load more orders: $e';
+    } finally {
+      _isFetchingMore = false;
       notifyListeners();
     }
   }

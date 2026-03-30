@@ -17,6 +17,7 @@ class Product {
   final DateTime? updatedAt;
   final String? createdBy;
   final String? updatedBy;
+  final List<ProductOption> options;
   final List<ProductVariant> variants;
   final int viewCount;
   final String? imageUrl;
@@ -39,6 +40,7 @@ class Product {
     this.updatedAt,
     this.createdBy,
     this.updatedBy,
+    this.options = const [],
     this.variants = const [],
     this.viewCount = 0,
     this.imageUrl,
@@ -71,6 +73,10 @@ class Product {
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) : null,
       createdBy: json['createdBy']?.toString(),
       updatedBy: json['updatedBy']?.toString(),
+      options: (json['options'] as List<dynamic>?)
+              ?.map((e) => ProductOption.fromJson(e))
+              .toList() ??
+          [],
       variants: (json['variants'] as List<dynamic>?)
               ?.map((e) => ProductVariant.fromJson(e))
               .toList() ??
@@ -102,6 +108,8 @@ class Product {
       'updatedAt': updatedAt?.toIso8601String(),
       'createdBy': createdBy,
       'updatedBy': updatedBy,
+      'options': options.map((e) => e.toJson()).toList(),
+      'variants': variants.map((e) => e.toJson()).toList(),
       'imageUrl': imageUrl,
     };
   }
@@ -199,6 +207,30 @@ class Brand {
       'name': name,
       'description': description,
       'logoUrl': logoUrl,
+    };
+  }
+}
+
+class ProductOption {
+  final String name;
+  final List<String> values;
+
+  ProductOption({
+    required this.name,
+    this.values = const [],
+  });
+
+  factory ProductOption.fromJson(Map<String, dynamic> json) {
+    return ProductOption(
+      name: json['name']?.toString() ?? '',
+      values: (json['values'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'values': values,
     };
   }
 }

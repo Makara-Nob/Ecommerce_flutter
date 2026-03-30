@@ -109,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
                     
                     Text(
-                      'Welcome to Makara Shop',
+                      'Welcome to NAGA Shop',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondaryLight,
                       ),
@@ -139,16 +139,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: _usernameController,
                               decoration: InputDecoration(
                                 labelText: 'Username',
-                                prefixIcon: const Icon(Icons.person_outline),
+                                labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                prefixIcon: Icon(Icons.person_outline_rounded, color: AppColors.primaryStart),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey[200]!),
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
                                 ),
                                 filled: true,
-                                fillColor: Colors.grey[50],
+                                fillColor: Colors.grey[100],
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                               ),
                               validator: (value) =>
                                   value?.isEmpty ?? true ? 'Please enter username' : null,
@@ -158,52 +157,75 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: _passwordController,
                               decoration: InputDecoration(
                                 labelText: 'Password',
-                                prefixIcon: const Icon(Icons.lock_outline),
+                                labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.primaryStart),
                                 suffixIcon: IconButton(
-                                  icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                                  icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.grey),
                                   onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(color: Colors.grey[200]!),
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
                                 ),
                                 filled: true,
-                                fillColor: Colors.grey[50],
+                                fillColor: Colors.grey[100],
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                               ),
                               obscureText: _obscurePassword,
                               validator: (value) =>
                                   value?.isEmpty ?? true ? 'Please enter password' : null,
                             ),
                             const SizedBox(height: 24),
+                            const SizedBox(height: 24),
                             SizedBox(
                               width: double.infinity,
-                              height: 50,
+                              height: 54,
                               child: FilledButton(
                                 onPressed: _isLoading ? null : _handleLogin,
                                 style: FilledButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ).copyWith(
+                                  backgroundColor: WidgetStateProperty.resolveWith((states) => null),
+                                ),
+                                child: Ink(
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.primaryGradient,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primaryStart.withOpacity(0.3),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Container(
+                                    alignment: Alignment.center,
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Login',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.white,
+                                              letterSpacing: 1,
+                                            ),
+                                          ),
                                   ),
                                 ),
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Text(
-                                        'Login',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
                               ),
                             ),
                           ],

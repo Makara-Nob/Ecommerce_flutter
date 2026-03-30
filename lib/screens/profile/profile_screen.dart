@@ -14,6 +14,7 @@ import 'saved_cards_screen.dart';
 import 'wishlist_screen.dart';
 import '../../providers/wishlist_provider.dart';
 import '../orders/order_list_screen.dart';
+import '../../widgets/glass_container.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -112,84 +113,77 @@ class ProfileScreen extends StatelessWidget {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Modern Header
-          Container(
-            padding: const EdgeInsets.only(top: 60, bottom: 40, left: 24, right: 24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2), width: 2),
-                        ),
-                        child: CircleAvatar(
-                          radius: 36,
-                          backgroundColor: theme.colorScheme.primaryContainer,
-                          backgroundImage: (user?.profileUrl != null && user!.profileUrl!.isNotEmpty)
-                              ? NetworkImage(user!.profileUrl!)
-                              : null,
-                          child: (user?.profileUrl == null || user!.profileUrl!.isEmpty)
-                              ? Text(
-                                  user?.fullName?.isNotEmpty == true
-                                      ? user!.fullName![0].toUpperCase()
-                                      : (user?.username?.isNotEmpty == true
-                                          ? user!.username![0].toUpperCase()
-                                          : 'U'),
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                )
-                              : null,
-                        ),
+          // Modern Floating Header
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: GlassContainer(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
+              blur: 20,
+              opacity: 0.1,
+              borderRadius: BorderRadius.circular(32),
+              child: Row(
+                children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: AppColors.gold.withOpacity(0.3), width: 2),
                       ),
-                    const SizedBox(width: 20),
-                    // Names
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user?.fullName ?? 'User',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          if (user?.username != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 2),
-                              child: Text(
-                                '${user!.username}',
+                      child: CircleAvatar(
+                        radius: 36,
+                        backgroundColor: AppColors.primaryStart.withOpacity(0.1),
+                        backgroundImage: (user?.profileUrl != null && user!.profileUrl!.isNotEmpty)
+                            ? NetworkImage(user!.profileUrl!)
+                            : null,
+                        child: (user?.profileUrl == null || user!.profileUrl!.isEmpty)
+                            ? Text(
+                                user?.fullName?.isNotEmpty == true
+                                    ? user!.fullName![0].toUpperCase()
+                                    : (user?.username?.isNotEmpty == true
+                                        ? user!.username![0].toUpperCase()
+                                        : 'U'),
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w500,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.primaryStart,
                                 ),
-                              ),
-                            ),
-                        ],
+                              )
+                            : null,
                       ),
                     ),
-                  ],
-                ),
-              ],
+                  const SizedBox(width: 20),
+                  // Names
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.fullName ?? 'User',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.textPrimaryLight,
+                          ),
+                        ),
+                        if (user?.username != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              '@${user!.username}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.primaryEnd,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ).animate().fadeIn().slideY(begin: -0.1),
 
@@ -222,6 +216,19 @@ class ProfileScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const WishlistScreen(),
+                        ),
+                      );
+                    }),
+                    
+                  const Divider(height: 1, indent: 64),
+
+                  _buildMenuItem(context, Icons.receipt_long_outlined, 'My Orders',
+                    subtitle: 'Track and manage your purchases',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const OrderListScreen(),
                         ),
                       );
                     }),
@@ -343,12 +350,12 @@ class ProfileScreen extends StatelessWidget {
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(10),
+          gradient: AppColors.primaryGradient.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: Colors.grey[800], size: 22),
+        child: Icon(icon, color: AppColors.primaryStart, size: 20),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
       subtitle: subtitle != null ? Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])) : null,

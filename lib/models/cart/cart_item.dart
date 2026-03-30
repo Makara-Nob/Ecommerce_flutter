@@ -25,14 +25,14 @@ class CartItem {
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      id: json['id'] ?? 0,
+      id: json['id'] ?? json['_id'] ?? 0,
       product: json['product'] != null 
           ? Product.fromJson(json['product'])
           : Product(
               id: json['productId'] ?? 0,
               name: json['productName'] ?? 'Unknown Product',
               sku: json['productSku'] ?? '',
-              quantity: json['productQuantity'] ?? 999, // Fallback to 999 if not provided to avoid blocking UI
+              quantity: json['productQuantity'] ?? 999,
               minStock: 0,
               costPrice: 0,
               sellingPrice: (json['unitPrice'] ?? 0).toDouble(),
@@ -43,11 +43,13 @@ class CartItem {
                   [],
             ),
       quantity: json['quantity'] ?? 0,
-      price: (json['price'] ?? json['unitPrice'] ?? 0).toDouble(),
-      subtotal: (json['subtotal'] ?? 0).toDouble(),
-      variantId: json['variantId'],
-      variantName: json['variantName'],
-      variantAttributes: json['variantAttributes'],
+      // ➕ NEW — unitPrice is the variant-adjusted price stored by backend
+      price: (json['unitPrice'] ?? json['price'] ?? 0).toDouble(),
+      subtotal: (json['subTotal'] ?? json['subtotal'] ?? 0).toDouble(),
+      // ➕ NEW — read variant fields stored by backend
+      variantId: json['variantId'] is int ? json['variantId'] : null,
+      variantName: json['variantName']?.toString(),
+      variantAttributes: json['variantAttributes']?.toString(),
     );
   }
 

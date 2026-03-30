@@ -10,6 +10,7 @@ import 'dart:convert';
 import '../../providers/cart_provider.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/address_provider.dart';
+import '../../models/cart/cart_item.dart';
 import '../../models/address/address_model.dart';
 import '../../models/payment/saved_card.dart';
 import '../../services/card_service.dart';
@@ -19,6 +20,8 @@ import '../profile/saved_cards_screen.dart';
 import 'order_success_screen.dart';
 import 'aba_webview_screen.dart';
 import 'aba_khqr_screen.dart';
+// ➕ NEW — InvoiceScreen replaces OrderSuccessScreen as post-payment destination
+import 'invoice_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Payment method identifiers
@@ -30,7 +33,8 @@ enum _PaymentChoice {
 }
 
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({super.key});
+  final List<CartItem>? directItems;
+  const CheckoutScreen({super.key, this.directItems});
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -110,23 +114,27 @@ class _CheckoutScreenState extends State<CheckoutScreen>
       NumberFormat.currency(symbol: '\$', decimalDigits: 2).format(amount);
 
   // ── verify payment ─────────────────────────────────────────────────────────
-  Future<void> _verifyPayment(int orderId, {bool silent = false}) async {
-    if (_isCheckingPayment) return;
+  Future<bool> _verifyPayment(int orderId, {bool silent = false}) async {
+    if (_isCheckingPayment) return false;
     if (!silent) setState(() => _isCheckingPayment = true);
     try {
       final op = Provider.of<OrderProvider>(context, listen: false);
       final ok = await op.checkPaymentStatus(orderId);
-      if (!mounted) return;
+      if (!mounted) return false;
       if (ok && op.currentOrder?.status == 'CONFIRMED') {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const OrderSuccessScreen()),
+          MaterialPageRoute(
+            builder: (_) => InvoiceScreen(order: op.currentOrder!),
+          ),
         );
+        return true; // ➕ stops KHQR polling timer
       } else if (!silent) {
         _showSnack('Payment still pending. Please wait a moment.', isError: false);
       }
     } finally {
       if (mounted && !silent) setState(() => _isCheckingPayment = false);
     }
+    return false;
   }
 
   // ── place order then route by payment choice ───────────────────────────────
@@ -140,18 +148,31 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     setState(() => _isPlacingOrder = true);
 
     try {
-      final cartProvider = Provider.of<CartProvider>(context, listen: false);
       final orderProvider = Provider.of<OrderProvider>(context, listen: false);
-      final cart = cartProvider.cart;
+      
+      List<Map<String, dynamic>> items = [];
+      
+      if (widget.directItems != null && widget.directItems!.isNotEmpty) {
+        items = widget.directItems!.map((i) => {
+          'productId': i.product.id,
+          'quantity': i.quantity,
+          if (i.variantId != null) 'variantId': i.variantId!,
+        }).toList();
+      } else {
+        final cartProvider = Provider.of<CartProvider>(context, listen: false);
+        final cart = cartProvider.cart;
 
-      if (cart == null || cart.items.isEmpty) {
-        _showSnack('Cart is empty');
-        return;
+        if (cart == null || cart.items.isEmpty) {
+          _showSnack('Cart is empty');
+          return;
+        }
+
+        items = cart.items.map((i) => {
+          'productId': i.product.id,
+          'quantity': i.quantity,
+          if (i.variantId != null) 'variantId': i.variantId!,
+        }).toList();
       }
-
-      final items = cart.items
-          .map((i) => {'productId': i.product.id, 'quantity': i.quantity})
-          .toList();
 
       final addr = _selectedAddress!;
       final fullAddress = '${addr.streetAddress}, ${addr.city}'
@@ -164,6 +185,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         notes: _noteController.text,
         items: items,
         paymentMethod: 'ABA_PAYWAY',
+        isBuyNow: widget.directItems != null,
       );
 
       if (!mounted) return;
@@ -173,7 +195,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         return;
       }
 
-      cartProvider.clearLocalCart();
+      if (widget.directItems == null) {
+        Provider.of<CartProvider>(context, listen: false).clearLocalCart();
+      }
       final order = orderProvider.currentOrder;
 
       if (order == null) {
@@ -217,9 +241,14 @@ class _CheckoutScreenState extends State<CheckoutScreen>
       final ok = await _cardService.payByToken(orderId, card.index);
       if (!mounted) return;
       if (ok) {
+        // ➕ NEW — Navigate to InvoiceScreen with saved-card payment order data
+        final op = Provider.of<OrderProvider>(context, listen: false);
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const OrderSuccessScreen()),
+          MaterialPageRoute(
+            builder: (_) => InvoiceScreen(order: op.currentOrder!),
+          ),
         );
+        // BEFORE: MaterialPageRoute(builder: (_) => const OrderSuccessScreen())
       } else {
         _showSnack('Card payment failed. Please try another method.');
       }
@@ -290,6 +319,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                     qrString: json['qrString'],
                     amount: paywayPayload['amount'] ?? '0.00',
                     tranId: paywayPayload['tran_id'] ?? json['status']['tran_id'] ?? 'N/A',
+                    // ➕ Now returns bool — true stops the polling timer in AbaKhqrScreen
                     onVerify: ({bool silent = false}) => _verifyPayment(orderId, silent: silent),
                   ),
                 ),
@@ -495,14 +525,14 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   Widget _buildOrderItems(ThemeData theme) {
     return Consumer<CartProvider>(
       builder: (context, cartProvider, _) {
-        final cart = cartProvider.cart;
-        if (cart == null || cart.items.isEmpty) return const SizedBox.shrink();
+        final items = widget.directItems ?? cartProvider.cart?.items ?? [];
+        if (items.isEmpty) return const SizedBox.shrink();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionHeader(
-                '${cart.items.length} item${cart.items.length > 1 ? 's' : ''} in your order',
+                '${items.length} item${items.length > 1 ? 's' : ''} in your order',
                 Icons.shopping_bag_outlined),
             const SizedBox(height: 12),
             Container(
@@ -519,9 +549,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 ],
               ),
               child: Column(
-                children: cart.items.asMap().entries.map((e) {
+                children: items.asMap().entries.map((e) {
                   final item = e.value;
-                  final isLast = e.key == cart.items.length - 1;
+                  final isLast = e.key == items.length - 1;
                   return Column(
                     children: [
                       Padding(
@@ -980,9 +1010,13 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   // ── Bottom CTA bar ─────────────────────────────────────────────────────────
   Widget _buildBottomBar(ThemeData theme) {
     return Consumer<CartProvider>(
-      builder: (context, cartProvider, _) {
-        final cart = cartProvider.cart;
-        final total = cart?.totalAmount ?? 0.0;
+      builder: (context, cartManager, child) {
+        final totalAmount = widget.directItems != null
+            ? widget.directItems!.fold<double>(0, (sum, item) => sum + item.subtotal)
+            : (cartManager.cart?.totalAmount ?? 0);
+        final itemCount = widget.directItems != null
+            ? widget.directItems!.fold<int>(0, (sum, item) => sum + item.quantity)
+            : (cartManager.cart?.items.length ?? 0);
         final isBusy = _isPlacingOrder || _isPayingByToken || _isCheckingPayment;
 
         return Container(
@@ -1009,7 +1043,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                         style: theme.textTheme.titleMedium
                             ?.copyWith(color: Colors.grey[600])),
                     Text(
-                      _formatCurrency(total),
+                      _formatCurrency(totalAmount),
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primaryStart,

@@ -23,10 +23,11 @@ class WishlistScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
+                    if (Navigator.of(context).canPop())
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
                     const Icon(Icons.favorite, color: Colors.white, size: 28),
                     const SizedBox(width: 12),
                     const Text(

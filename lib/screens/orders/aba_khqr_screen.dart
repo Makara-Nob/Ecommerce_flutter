@@ -150,7 +150,8 @@ class AbaKhqrScreen extends StatefulWidget {
   final String qrString;
   final String amount;
   final String tranId;
-  final Future<void> Function({bool silent}) onVerify;
+  final Future<bool> Function({bool silent}) onVerify; // ➕ Returns bool: true = confirmed
+  final String merchantName;
 
   const AbaKhqrScreen({
     super.key,
@@ -159,6 +160,7 @@ class AbaKhqrScreen extends StatefulWidget {
     required this.amount,
     required this.tranId,
     required this.onVerify,
+    this.merchantName = 'NAGA',
   });
 
   @override
@@ -167,7 +169,8 @@ class AbaKhqrScreen extends StatefulWidget {
 
 class _AbaKhqrScreenState extends State<AbaKhqrScreen> {
   Timer? _pollingTimer;
-  Uint8List? _imageBytes; // Make nullable to support mock
+  Uint8List? _imageBytes;
+  bool _paymentConfirmed = false; // ➕ NEW — guard to stop duplicate polls
 
   @override
   void initState() {
@@ -186,8 +189,14 @@ class _AbaKhqrScreenState extends State<AbaKhqrScreen> {
       _imageBytes = null; // Trigger mock on error
     }
 
-    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      widget.onVerify(silent: true);
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      // ➕ Stop polling once confirmed, prevents redundant calls after navigation
+      if (_paymentConfirmed) return;
+      final confirmed = await widget.onVerify(silent: true);
+      if (confirmed && mounted) {
+        _paymentConfirmed = true;
+        _pollingTimer?.cancel();
+      }
     });
   }
 
@@ -220,6 +229,7 @@ class _AbaKhqrScreenState extends State<AbaKhqrScreen> {
             child: _KhqrCard(
               amount: widget.amount,
               imageBytes: _imageBytes,
+              merchantName: widget.merchantName, // ➕ NEW — pass merchant name down
             )
                 .animate()
                 .fadeIn(duration: 350.ms)
@@ -263,9 +273,14 @@ class _AbaKhqrScreenState extends State<AbaKhqrScreen> {
 // Kept separate so the parent screen never rebuilds this due to timer ticks.
 class _KhqrCard extends StatelessWidget {
   final String amount;
-  final Uint8List? imageBytes; // Allow null for mock
+  final Uint8List? imageBytes;
+  final String merchantName; // ➕ NEW — display the real merchant name
 
-  const _KhqrCard({required this.amount, required this.imageBytes});
+  const _KhqrCard({
+    required this.amount,
+    required this.imageBytes,
+    required this.merchantName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -311,9 +326,9 @@ class _KhqrCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Company Name',
-                  style: TextStyle(
+                Text(
+                  merchantName, // ➕ NEW — was hardcoded 'Company Name'
+                  style: const TextStyle(
                     fontSize: 15,
                     color: Colors.black87,
                     fontWeight: FontWeight.w400,

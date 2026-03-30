@@ -72,7 +72,7 @@ class _GlobalDraggableCartState extends State<GlobalDraggableCart> {
             },
             child: Consumer<CartProvider>(
               builder: (context, cartProvider, child) {
-                final cartItemCount = cartProvider.cart?.items.length ?? 0;
+                final cartItemCount = cartProvider.itemCount;
                 return Container(
                   width: 60,
                   height: 60,

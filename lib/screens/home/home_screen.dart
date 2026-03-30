@@ -35,14 +35,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, authProvider, _) {
+    return Consumer2<AuthProvider, CartProvider>(
+      builder: (context, authProvider, cartProvider, _) {
         final isLoggedIn = authProvider.isAuthenticated;
+        final cartCount = cartProvider.itemCount;
 
         // Build screens & nav items based on auth state
         final screens = [
           const ProductListScreen(),
-          if (isLoggedIn) const OrderListScreen(),
+          const CartScreen(showBackButton: false),
+          const OrderListScreen(
+            showBackButton: false,
+            showFilter: false,
+            initialStatus: 'PAID',
+          ),
           const ProfileScreen(),
         ];
 
@@ -52,12 +58,24 @@ class _HomeScreenState extends State<HomeScreen> {
             activeIcon: Icon(Icons.store),
             label: 'Products',
           ),
-          if (isLoggedIn)
-            const BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_outlined),
-              activeIcon: Icon(Icons.receipt_long),
-              label: 'Orders',
+          BottomNavigationBarItem(
+            icon: Badge(
+              label: Text('$cartCount'),
+              isLabelVisible: cartCount > 0,
+              child: const Icon(Icons.shopping_cart_outlined),
             ),
+            activeIcon: Badge(
+              label: Text('$cartCount'),
+              isLabelVisible: cartCount > 0,
+              child: const Icon(Icons.shopping_cart),
+            ),
+            label: 'Cart',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            activeIcon: Icon(Icons.receipt_long),
+            label: 'Orders',
+          ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
@@ -65,7 +83,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ];
 
-        // If selected index is out of range (e.g. user logs out while on Orders), reset
+        // Ensure selected index is safe
         final safeIndex = _selectedIndex.clamp(0, screens.length - 1);
 
         return Scaffold(
@@ -86,7 +104,15 @@ class _HomeScreenState extends State<HomeScreen> {
             child: BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
               currentIndex: safeIndex,
-              onTap: (index) => setState(() => _selectedIndex = index),
+              onTap: (index) {
+                final label = navItems[index].label;
+                // Pages that require authentication
+                if ((label == 'Wishlist' || label == 'Cart' || label == 'Orders') && !isLoggedIn) {
+                   Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                   return;
+                }
+                setState(() => _selectedIndex = index);
+              },
               selectedFontSize: 12,
               unselectedFontSize: 12,
               items: navItems,

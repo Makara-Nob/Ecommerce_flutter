@@ -13,11 +13,13 @@ class AuthProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   bool _isAuthenticated = false;
+  String? _token;
 
   UserData? get currentUser => _currentUser;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _isAuthenticated;
+  String? get token => _token;
 
   // Try to auto-login with stored token
   Future<bool> tryAutoLogin() async {
@@ -31,6 +33,7 @@ class AuthProvider with ChangeNotifier {
       if (response.success && response.data != null) {
         _currentUser = response.data;
         _isAuthenticated = true;
+        _token = token;
         
         // Update stored user data
         await _storageService.saveUser(response.data!);
@@ -56,6 +59,7 @@ class AuthProvider with ChangeNotifier {
       if (response.success && response.data != null && response.data!.token.isNotEmpty) {
         // Save token first
         final token = response.data!.token;
+        _token = token;
         await _storageService.saveToken(token);
 
         // Fetch full profile to ensure we have all fields (including profileUrl)
@@ -138,6 +142,7 @@ class AuthProvider with ChangeNotifier {
 
       if (response.success && response.data != null && response.data!.token.isNotEmpty) {
         final token = response.data!.token;
+        _token = token;
         await _storageService.saveToken(token);
 
         // Fetch full profile
@@ -205,6 +210,7 @@ class AuthProvider with ChangeNotifier {
     await _authService.logout();
     _currentUser = null;
     _isAuthenticated = false;
+    _token = null;
     _errorMessage = null;
     notifyListeners();
   }

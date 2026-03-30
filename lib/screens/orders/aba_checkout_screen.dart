@@ -73,8 +73,8 @@ class _AbaCheckoutScreenState extends State<AbaCheckoutScreen> with WidgetsBindi
     }
   }
 
-  Future<void> _verifyPayment({bool silent = false}) async {
-    if (_isCheckingPayment) return;
+  Future<bool> _verifyPayment({bool silent = false}) async {
+    if (_isCheckingPayment) return false;
 
     if (!silent) setState(() => _isCheckingPayment = true);
 
@@ -82,7 +82,7 @@ class _AbaCheckoutScreenState extends State<AbaCheckoutScreen> with WidgetsBindi
       final orderProvider = Provider.of<OrderProvider>(context, listen: false);
       final success = await orderProvider.checkPaymentStatus(widget.orderId);
 
-      if (!mounted) return;
+      if (!mounted) return false;
 
       if (success) {
         final order = orderProvider.currentOrder;
@@ -90,7 +90,7 @@ class _AbaCheckoutScreenState extends State<AbaCheckoutScreen> with WidgetsBindi
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const OrderSuccessScreen()),
           );
-          return;
+          return true; // ➕ stop KHQR polling
         } else if (!silent) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -119,6 +119,7 @@ class _AbaCheckoutScreenState extends State<AbaCheckoutScreen> with WidgetsBindi
     } finally {
       if (mounted && !silent) setState(() => _isCheckingPayment = false);
     }
+    return false;
   }
 
   void _navigateToAbaCheckout(String abaOption, String methodName) async {

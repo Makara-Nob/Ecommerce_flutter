@@ -46,6 +46,12 @@ class ApiConstants {
   // Saved cards endpoints
   static const String savedCards = '/api/v1/users/saved-cards';
   static String deleteCard(int index) => '/api/v1/users/saved-cards/$index';
+
+  // Notification endpoints (auth required)
+  static const String notifications = '/api/v1/notifications';
+  static const String markAllNotificationsRead = '/api/v1/notifications/read-all';
+  static String markNotificationRead(String id) => '/api/v1/notifications/$id/read';
+
   
   // Banner endpoints (public)
   static const String publicBanners = '/api/v1/public/banners';

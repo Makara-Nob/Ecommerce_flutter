@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "126718379030",
+    "project_id": "ecommercepushnotificatio-5ac28",
+    "storage_bucket": "ecommercepushnotificatio-5ac28.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:126718379030:android:57dfb9a8c0564641512137",
+        "android_client_info": {
+          "package_name": "com.nobmakara.e_commerce"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-M9tT6Nw7qaNvJ14oE7MMRnTSwRq81ws"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
